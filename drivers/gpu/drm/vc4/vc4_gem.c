@@ -1308,7 +1308,7 @@ int
 vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 			 u32 control, u32 noflush, u32 timeout)
 {
-	struct drm_device *dev = vc4->dev;
+	struct drm_device *dev = &vc4->base;
 	u32 control_paddr;
 	struct vc4_exec_info *exec;
 	struct control_args {
@@ -1357,7 +1357,7 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 
 	exec->user_qpu_job_count = num_jobs;
 
-	seqno = vc4_queue_submit(dev, exec, &acquire_ctx);
+	seqno = vc4_queue_submit(dev, exec, &acquire_ctx, NULL);
 
 	/* The mailbox interface is synchronous, so wait for the job
 	 * we just made to complete.
