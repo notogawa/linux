@@ -1341,7 +1341,7 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 		return ret;
 	}
 
-	control_args = ioremap(control_paddr, num_jobs * 2 * sizeof(u32));
+	control_args = arch_memremap_wb(control_paddr, num_jobs * 2 * sizeof(u32));
 	if (!control_args) {
 		vc4_complete_exec(dev, exec);
 		return -EINVAL;
