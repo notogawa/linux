@@ -111,7 +111,7 @@ vc4_filter_property(struct rpi_firmware *fw, uint32_t *data, size_t tag_size)
 					  packet->control,
 					  packet->noflush,
 					  packet->timeout_ms);
-
+		packet->size = 0x80000004;
 		packet->num_qpu = (ret != 0);
 
 		return 0;
@@ -128,6 +128,7 @@ vc4_filter_property(struct rpi_firmware *fw, uint32_t *data, size_t tag_size)
 		 * when the QPUs are off or on.  Just hand back the
 		 * return value indicating success.
 		 */
+		packet->size = 0x80000004;
 		packet->enable = 0;
 
 		return 0;
