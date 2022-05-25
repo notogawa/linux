@@ -724,7 +724,7 @@ vc4_queue_submit(struct drm_device *dev, struct vc4_exec_info *exec,
 
 	spin_unlock_irqrestore(&vc4->job_lock, irqflags);
 
-	return seqno;
+	return 0;
 }
 
 /**
@@ -1357,7 +1357,12 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 
 	exec->user_qpu_job_count = num_jobs;
 
-	seqno = vc4_queue_submit(dev, exec, &acquire_ctx, NULL);
+	ret = vc4_queue_submit(dev, exec, &acquire_ctx, NULL);
+	if (ret) {
+		vc4_complete_exec(dev, exec);
+		return ret;
+	}
+	seqno = vc4->emit_seqno;
 
 	/* The mailbox interface is synchronous, so wait for the job
 	 * we just made to complete.
