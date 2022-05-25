@@ -41,7 +41,8 @@ vc4_queue_hangcheck(struct drm_device *dev)
 {
 	struct vc4_dev *vc4 = to_vc4_dev(dev);
 
-	mod_timer(&vc4->hangcheck.timer, jiffies + msecs_to_jiffies(10 /* Safe? */));
+	mod_timer(&vc4->hangcheck.timer,
+		  round_jiffies_up(jiffies + msecs_to_jiffies(100)));
 }
 
 struct vc4_hang_state {
@@ -323,7 +324,7 @@ vc4_hangcheck_elapsed(struct timer_list *t)
 {
 	struct vc4_dev *vc4 = from_timer(vc4, t, hangcheck.timer);
 	struct drm_device *dev = &vc4->base;
-	uint32_t ct0ca, ct1ca, srqcs, qpurqcc, qpurqcm;
+	uint32_t ct0ca, ct1ca, qpurqcc;
 	unsigned long irqflags;
 	struct vc4_exec_info *bin_exec, *render_exec;
 
@@ -340,21 +341,8 @@ vc4_hangcheck_elapsed(struct timer_list *t)
 
 	ct0ca = V3D_READ(V3D_CTNCA(0));
 	ct1ca = V3D_READ(V3D_CTNCA(1));
-	srqcs = V3D_READ(V3D_SRQCS);
-	qpurqcc = VC4_GET_FIELD(srqcs, V3D_SRQCS_QPURQCC);
-	qpurqcm = VC4_GET_FIELD(srqcs, V3D_SRQCS_QPURQCM);
-
-	/* If userqpu program running */
-	if (render_exec && render_exec->user_qpu_job_count == qpurqcm) {
-		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
-		if (qpurqcc == qpurqcm) {
-			schedule_work(&vc4->hangcheck.reset_work);
-			return;
-		} else if (qpurqcc < qpurqcm) {
-			vc4_queue_hangcheck(dev);
-			return;
-		}
-	}
+	qpurqcc = VC4_GET_FIELD(V3D_READ(V3D_SRQCS),
+				V3D_SRQCS_QPURQCC);
 
 	/* If we've made any progress in execution, rearm the timer
 	 * and wait.
