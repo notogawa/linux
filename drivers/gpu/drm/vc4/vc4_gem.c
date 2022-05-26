@@ -1322,10 +1322,6 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 
 	control_paddr = control & ~(BIT(31) | BIT(30));
 
-	DRM_INFO("QPU execute nqpu 0x%08x, "
-		 "control 0x%08x (0x%08x), noflush 0x%08x, timeout 0x%08x: ",
-		 num_jobs, control, control_paddr, noflush, timeout);
-
 	if (num_jobs > ARRAY_SIZE(exec->user_qpu_job)) {
 		DRM_ERROR("V3D QPU execution request with too many jobs (%d)\n",
 			  num_jobs);
@@ -1351,8 +1347,6 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 	for (i = 0; i < num_jobs; i++) {
 		exec->user_qpu_job[i].code = control_args[i].code;
 		exec->user_qpu_job[i].uniforms = control_args[i].uniforms;
-		DRM_INFO("%08x 0x%08x\n", exec->user_qpu_job[i].code,
-			 exec->user_qpu_job[i].uniforms);
 	}
 	iounmap(control_args);
 
