@@ -981,6 +981,7 @@ void vc4_irq_disable(struct drm_device *dev);
 int vc4_irq_install(struct drm_device *dev, int irq);
 void vc4_irq_uninstall(struct drm_device *dev);
 void vc4_irq_reset(struct drm_device *dev);
+void vc4_irq_finish_render_job(struct drm_device *dev);
 
 /* vc4_hvs.c */
 extern struct platform_driver vc4_hvs_driver;

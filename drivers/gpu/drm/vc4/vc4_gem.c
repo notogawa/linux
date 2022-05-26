@@ -1318,6 +1318,7 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 	int ret, i;
 	uint64_t seqno;
 	struct ww_acquire_ctx acquire_ctx;
+	unsigned long polling_timeout;
 
 	control_paddr = control & ~(BIT(31) | BIT(30));
 
@@ -1367,7 +1368,23 @@ vc4_firmware_qpu_execute(struct vc4_dev *vc4, u32 num_jobs,
 	/* The mailbox interface is synchronous, so wait for the job
 	 * we just made to complete.
 	 */
-	ret = vc4_wait_for_seqno(dev, seqno, ~0ull, true);
+	ret = -ETIME;
+	polling_timeout = jiffies + msecs_to_jiffies(timeout);
+	while (time_before(jiffies, polling_timeout)) {
+		uint32_t srqcs = V3D_READ(V3D_SRQCS);
+		uint32_t qpurqcc = VC4_GET_FIELD(srqcs, V3D_SRQCS_QPURQCC);
+		uint32_t qpurqcm = VC4_GET_FIELD(srqcs, V3D_SRQCS_QPURQCM);
+		if (qpurqcm == num_jobs && qpurqcc == qpurqcm) {
+			ret = 0;
+			break;
+		}
+		cond_resched();
+	}
+
+	V3D_WRITE(V3D_SRQCS, V3D_SRQCS_QPURQCC_CLEAR | V3D_SRQCS_QPURQCM_CLEAR);
+	spin_lock(&vc4->job_lock);
+	vc4_irq_finish_render_job(dev);
+	spin_unlock(&vc4->job_lock);
 
 	return ret;
 }
