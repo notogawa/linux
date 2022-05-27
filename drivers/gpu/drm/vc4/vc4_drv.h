@@ -629,7 +629,7 @@ struct vc4_exec_info {
 	/* Last current addresses the hardware was processing when the
 	 * hangcheck timer checked on us.
 	 */
-	uint32_t last_ct0ca, last_ct1ca, last_qpurqcc;
+	uint32_t last_ct0ca, last_ct1ca;
 
 	/* Kernel-space copy of the ioctl arguments */
 	struct drm_vc4_submit_cl *args;

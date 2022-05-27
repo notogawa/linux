@@ -324,7 +324,7 @@ vc4_hangcheck_elapsed(struct timer_list *t)
 {
 	struct vc4_dev *vc4 = from_timer(vc4, t, hangcheck.timer);
 	struct drm_device *dev = &vc4->base;
-	uint32_t ct0ca, ct1ca, qpurqcc;
+	uint32_t ct0ca, ct1ca;
 	unsigned long irqflags;
 	struct vc4_exec_info *bin_exec, *render_exec;
 
@@ -339,23 +339,24 @@ vc4_hangcheck_elapsed(struct timer_list *t)
 		return;
 	}
 
+	/* Can't check hangs user qpu program execution */
+	if (render_exec && render_exec->user_qpu_job_count > 0) {
+		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
+		return;
+	}
+
 	ct0ca = V3D_READ(V3D_CTNCA(0));
 	ct1ca = V3D_READ(V3D_CTNCA(1));
-	qpurqcc = VC4_GET_FIELD(V3D_READ(V3D_SRQCS),
-				V3D_SRQCS_QPURQCC);
 
 	/* If we've made any progress in execution, rearm the timer
 	 * and wait.
 	 */
 	if ((bin_exec && ct0ca != bin_exec->last_ct0ca) ||
-	    (render_exec && (ct1ca != render_exec->last_ct1ca ||
-			     qpurqcc != render_exec->last_qpurqcc))) {
+	    (render_exec && ct1ca != render_exec->last_ct1ca)) {
 		if (bin_exec)
 			bin_exec->last_ct0ca = ct0ca;
-		if (render_exec) {
+		if (render_exec)
 			render_exec->last_ct1ca = ct1ca;
-			render_exec->last_qpurqcc = qpurqcc;
-		}
 		spin_unlock_irqrestore(&vc4->job_lock, irqflags);
 		vc4_queue_hangcheck(dev);
 		return;
