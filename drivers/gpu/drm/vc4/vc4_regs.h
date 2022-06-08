@@ -131,6 +131,7 @@
 # define V3D_PCTRE_EN	BIT(31)
 #define V3D_PCTR(x)  (0x00680 + ((x) * 8))
 #define V3D_PCTRS(x) (0x00684 + ((x) * 8))
+#define V3D_DBCFG    0x00e00
 #define V3D_DBQITE   0x00e2c
 #define V3D_DBQITC   0x00e30
 #define V3D_DBGE     0x00f00
